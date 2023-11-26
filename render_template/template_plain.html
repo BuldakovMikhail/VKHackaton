@@ -15,5 +15,12 @@
   {% else %}
     <h2>Bad guy: {{ double_text(double_text(message)) }}</h2>
   {% endif %}
+
+  {% for i in range(5) %}
+    <h2>Our best loop variable: {{ i }}</h2>
+  {% endfor %}
+  {% for i in message %}
+    <h2>Our second best loop variable: {{ i }}</h2>
+  {% endfor %}
 </body>
 </html>

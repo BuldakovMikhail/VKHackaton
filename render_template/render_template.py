@@ -19,21 +19,35 @@ def replace_ifs(text, replacements):
 
 
 def replace_fors(text, replacements):
-    return text
-
-
-def replace_vars(text, replacements):
 
     def re_match(match):
-        return str(eval(match.group(1), replacements))
+        variable = match.group(1).strip()
+        iterable = eval(match.group(2).strip(), replacements)
+        code = match.group(3).strip()
 
-    pattern = r"{{(.+?)}}"
-    result = re.sub(pattern, re_match, text)
+        code_to_replace = []
+        for item in iterable:
+            current_code_part = replace_vars(code, replacements, {variable: item})
+            code_to_replace.append(current_code_part)
+
+        return '\n'.join(code_to_replace)
+
+    pattern = r"{%\s*for\s*(.+?)\s*in\s*(.+?)\s*%}(.+?){%\s*endfor\s*%}"
+    result = re.sub(pattern, re_match, text, flags=re.DOTALL)
     return result
 
 
-def make_replaces(text, replacements):
-    
+def replace_vars(text, replacements, lcls=None):
+
+    def re_match(match):
+        return str(eval(match.group(1).strip(), replacements, lcls))
+
+    pattern = r"{{(.+?)}}"
+    result = re.sub(pattern, re_match, text, flags=re.DOTALL)
+    return result
+
+
+def make_replaces(text, replacements):  
     text = replace_ifs(text, replacements)
     text = replace_fors(text, replacements)
     text = replace_vars(text, replacements)
