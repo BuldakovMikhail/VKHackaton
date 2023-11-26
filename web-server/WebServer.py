@@ -3,6 +3,7 @@ import socket
 # import urllib.parse
 from ReqParser import ReqParser
 from Response import Response
+from render_template import render_template
 
 class WebServer:
     def __init__(self):
@@ -21,6 +22,10 @@ class WebServer:
     async def handle_client(self, client_socket, client_address):
         loop = asyncio.get_event_loop()
         request = (await loop.sock_recv(client_socket, 1024)).decode()
+        if len(request) == 0:
+            client_socket.close()
+            return
+
         # request_lines = request.split('\r\n')
         # print(request)
         parsed_req = ReqParser(request)
@@ -37,13 +42,13 @@ class WebServer:
             resp.status = 404
             raw_response = self.__response_to_str(resp)
         else:
-            raw_response = self.__response_to_str(self.m_handlers[path]())
+            raw_response = self.__response_to_str(self.m_handlers[path](parsed_req))
 
         await loop.sock_sendall(client_socket, raw_response.encode())
 
         client_socket.close()
 
-    async def run(self, host, port):
+    async def run_wrapper(self, host, port):
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((host, port))
@@ -53,6 +58,9 @@ class WebServer:
         while True:
             client_socket, client_address = await loop.sock_accept(server_socket)
             await loop.create_task(self.handle_client(client_socket, client_address))
+
+    def run(self, host, port):
+        asyncio.run(self.run_wrapper(host, port))
 
     def __response_to_str(self, response: Response):
         return response.export()
@@ -77,18 +85,11 @@ def another_handler(uid, another):
     return render_template('web-server/main.html')
 
 @app.add_handler('/message')
-def test_handler():
-    resp = render_template('web-server/message.html')
-    resp.set_cookie('test', 'test_cookie', 100)
+def test_handler(session: ReqParser):
+    n_amount = session.get_cookies().get('n_amount', 0)
+    resp = Response()
+    resp.body = render_template('web-server/message.html', locals())
+    resp.set_cookie('n_amount', int(n_amount) + 1, 60 * 60 * 24)
     return resp
 
-def render_template(html_name):
-    with open(html_name, 'r') as file:
-        resp = Response()
-        resp.body = file.read()
-        return resp
-
-async def main():
-    await app.run('0.0.0.0', 8082)
-
-asyncio.run(main())
+app.run('0.0.0.0', 8080)

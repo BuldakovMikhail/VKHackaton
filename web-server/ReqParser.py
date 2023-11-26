@@ -4,6 +4,7 @@ from io import StringIO
 
 class ReqParser:
     def __init__(self, raw_req):
+        res = raw_req.split('\r\n', 1)
         req_target, headers = raw_req.split('\r\n', 1)
         self._method, self._url, self._version = req_target.split()
         message = email.message_from_string(headers)
