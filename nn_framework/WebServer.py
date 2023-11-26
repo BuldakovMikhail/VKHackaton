@@ -1,20 +1,21 @@
 import asyncio
 import socket
-# import urllib.parse
-from ReqParser import ReqParser
-from Response import Response
-from render_template import render_template
+
+from nn_framework.ReqParser import ReqParser
+from nn_framework.Response import Response
+from nn_framework.render_template import render_template
+from nn_framework.HandlerContainer import HandlersContainer
 
 class WebServer:
     def __init__(self):
-        self.m_handlers = {}
+        self.m_handlers = HandlersContainer()
 
     def add_handler(self, url):
         if url in self.m_handlers:
             raise RuntimeError('Обработчик этого URL уже существует!')
 
         def wrapper(func):
-            self.m_handlers[url] = func
+            self.m_handlers.add_handler(url, func)
             return func
 
         return wrapper
@@ -42,7 +43,8 @@ class WebServer:
             resp.status = 404
             raw_response = self.__response_to_str(resp)
         else:
-            raw_response = self.__response_to_str(self.m_handlers[path](parsed_req))
+            # self.m_handlers.try_call_handler(path)
+            raw_response = self.__response_to_str(self.m_handlers.try_call_handler(path)(parsed_req))
 
         await loop.sock_sendall(client_socket, raw_response.encode())
 
@@ -77,19 +79,19 @@ class WebServer:
         return url, params_dict
 
 
-app = WebServer()
+# app = WebServer()
 
-@app.add_handler('/user/<uid>/test/<another>')
-def another_handler(uid, another):
-    # request
-    return render_template('web-server/main.html')
+# @app.add_handler('/user/<uid>/test/<another>')
+# def another_handler(uid, another):
+#     # request
+#     return render_template('web-server/main.html')
 
-@app.add_handler('/message')
-def test_handler(session: ReqParser):
-    n_amount = session.get_cookies().get('n_amount', 0)
-    resp = Response()
-    resp.body = render_template('web-server/message.html', locals())
-    resp.set_cookie('n_amount', int(n_amount) + 1, 60 * 60 * 24)
-    return resp
+# @app.add_handler('/message')
+# def test_handler(session: ReqParser):
+#     n_amount = session.get_cookies().get('n_amount', 0)
+#     resp = Response()
+#     resp.body = render_template('web-server/message.html', locals())
+#     resp.set_cookie('n_amount', int(n_amount) + 1, 60 * 60 * 24)
+#     return resp
 
-app.run('0.0.0.0', 8080)
+# app.run('0.0.0.0', 8080)
