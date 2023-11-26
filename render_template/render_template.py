@@ -1,4 +1,5 @@
 import re
+import os
 
 
 def replace_ifs(text, replacements):
@@ -7,13 +8,12 @@ def replace_ifs(text, replacements):
         condition = bool(eval(match.group(1).strip(), replacements))
         code_if = match.group(2).strip()
         code_else = match.group(3).strip()
-        print(condition, code_if, code_else)
 
         code_to_replace = code_if if condition else code_else
 
         return code_to_replace
 
-    pattern = r"{% if(.+?)%}(.+?){% else %}(.+?){% endif %}"
+    pattern = r"{%\s*if(.+?)%}(.+?){%\s*else\s*%}(.+?){%\s*endif\s*%}"
     result = re.sub(pattern, re_match, text, flags=re.DOTALL)
     return result
 
@@ -27,7 +27,7 @@ def replace_vars(text, replacements):
     def re_match(match):
         return str(eval(match.group(1), replacements))
 
-    pattern = r"{{ (.+?) }}"
+    pattern = r"{{(.+?)}}"
     result = re.sub(pattern, re_match, text)
     return result
 
@@ -62,7 +62,7 @@ def main():
     usr = User(32)
 
     cntxt = locals()
-    print(render_template('template_plain.html', cntxt))
+    print(render_template(os.path.join(os.path.dirname(__file__), 'template_plain.html'), cntxt))
 
 if __name__ == '__main__':
     main()
