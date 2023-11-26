@@ -7,8 +7,16 @@ RE_TEMPLATE_FORS = r"{%\s*for\s*(.+?)\s*in\s*(.+?)\s*%}(.+?){%\s*endfor\s*%}"
 RE_TEMPLATE_VARS = r"{{(.+?)}}"
 
 
+def parse_expr(text, glbls, lcls=None):
+    # TODO: implement safe expression parser
+
+    return eval(text, glbls, lcls)
+
+
 def re_match_ifs(match, reprs):
-    condition = bool(eval(match.group(1).strip(), reprs))
+    # TODO: implement elifs and nested ifs support
+
+    condition = bool(parse_expr(match.group(1).strip(), reprs))
     code_if = match.group(2).strip()
     code_else = match.group(3).strip()
 
@@ -18,8 +26,10 @@ def re_match_ifs(match, reprs):
 
 
 def re_match_fors(match, reprs):
+    # TODO: implement nested fors support
+
     variable = match.group(1).strip()
-    iterable = eval(match.group(2).strip(), reprs)
+    iterable = parse_expr(match.group(2).strip(), reprs)
     code = match.group(3).strip()
 
     code_to_replace = []
@@ -31,7 +41,7 @@ def re_match_fors(match, reprs):
 
 
 def re_match_vars(match, reprs, lcls=None):
-    return str(eval(match.group(1).strip(), reprs, lcls))
+    return str(parse_expr(match.group(1).strip(), reprs, lcls))
 
 
 def replace_vars(text, replacements, lcls_=None):
@@ -47,6 +57,8 @@ def replace_html(text, re_match_with_replacements, pattern):
 
 
 def make_replaces(text, replacements):
+    # TODO: implement html blocks paste support
+
     text = replace_html(text,
                         functools.partial(re_match_ifs,
                                           reprs=replacements),
